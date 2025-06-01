@@ -1,0 +1,52 @@
+name: Release
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    permissions:
+      contents: write
+      pull-requests: read
+    outputs:
+      release-id: ${{ steps.release-drafter.outputs.id }}
+      version: ${{ steps.release-drafter.outputs.resolved_version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        id: release-drafter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    needs: release
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: true
+
+      - name: Build project
+        run: cargo build --release
+        env:
+          CARGO_PKG_VERSION: ${{ needs.release.outputs.version }}
+
+      - name: Upload artifacts
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: "target/release/bongo?(.exe)"
+          release-id: ${{ needs.release.outputs.release-id }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
