@@ -1,0 +1,8 @@
+name: Commit linter
+on: [push, pull_request]
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conventional Commitlint
+        uses: opensource-nepal/commitlint@v1.3.0
