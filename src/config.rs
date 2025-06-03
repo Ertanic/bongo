@@ -1,0 +1,64 @@
+use anyhow::Context;
+use knus::Decode;
+use std::path::Path;
+use tokio::fs;
+
+pub async fn load_config(path: &Path) -> anyhow::Result<Config> {
+    let exe_path = std::env::current_exe()?;
+    let exe_dir = exe_path
+        .parent()
+        .expect("Unable to get the directory of the executable file");
+    let config_path = exe_dir.join(path);
+
+    let content = fs::read_to_string(&config_path)
+        .await
+        .with_context(|| format!("Unable to load config file: {}", config_path.display()))?;
+
+    knus::parse(
+        config_path
+            .to_str()
+            .expect("Unable to convert a path to a string"),
+        &content,
+    )
+    .context("Failed to parse the config file")
+}
+
+#[derive(Decode, Default)]
+pub struct Config {
+    #[knus(child, default)]
+    pub logs: LogsConfig,
+}
+
+#[derive(Decode)]
+pub struct LogsConfig {
+    #[knus(property, default = true)]
+    pub enabled: bool,
+    #[knus(child, default)]
+    pub file: FileLogsConfig,
+}
+
+impl Default for LogsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            file: Default::default(),
+        }
+    }
+}
+
+#[derive(Decode)]
+pub struct FileLogsConfig {
+    #[knus(property, default = true)]
+    pub enabled: bool,
+    #[knus(property, default="logs".into())]
+    pub path: String,
+}
+
+impl Default for FileLogsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            path: String::from("logs"),
+        }
+    }
+}
