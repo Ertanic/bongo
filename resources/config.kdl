@@ -1,0 +1,3 @@
+logs enabled=true {
+    file enabled=true path="logs"
+}
