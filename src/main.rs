@@ -1,10 +1,5 @@
 use crate::config::load_config;
 use crate::logs::init_logs;
-use crate::routes::register_routes;
-use anyhow::Context;
-use axum::Router;
-use std::net::Ipv4Addr;
-use tower_http::trace::TraceLayer;
 
 mod config;
 mod logs;

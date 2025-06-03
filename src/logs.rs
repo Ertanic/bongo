@@ -1,22 +1,11 @@
-use crate::config::{LogsConfig, LogsLevel};
+#[cfg(not(debug_assertions))]
 use anyhow::Context;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
 use tracing_appender::{non_blocking, non_blocking::WorkerGuard};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard>> {
-    if !config.enabled {
-        return Ok(None);
-    }
-
-    let env_filter = tracing_subscriber::EnvFilter::new(match config.level {
-        LogsLevel::Error => "error",
-        LogsLevel::Warn => "warn",
-        LogsLevel::Info => "info",
-        LogsLevel::Debug => "debug",
-        LogsLevel::Trace => "trace",
-    });
+    let env_filter = tracing_subscriber::EnvFilter::new("trace");
 
     let console_layer = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stdout)
@@ -32,15 +21,8 @@ pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard
     }
 
     if let Ok(time) = SystemTime::now().duration_since(UNIX_EPOCH) {
-        let exe_path =
-            std::env::current_exe().context("Unable to get the path of the executable file")?;
-        let exe_folder = exe_path
-            .parent()
-            .context("Unable to get the directory of the executable file")?;
-        let logs_folder = exe_folder.join(&config.file.path);
-
-        if fs::metadata(&logs_folder).await.is_err() {
-            fs::create_dir_all(&logs_folder).await.with_context(|| {
+        if fs::metadata(LOGS_FOLDER).await.is_err() {
+            fs::create_dir(LOGS_FOLDER).await.with_context(|| {
                 format!(
                     "It is not possible to create a logs folder in the path: {}",
                     logs_folder.display()
