@@ -1,5 +1,5 @@
 use anyhow::{Context, bail};
-use knus::Decode;
+use knus::{Decode, DecodeScalar};
 use std::path::Path;
 use tokio::fs;
 
@@ -39,6 +39,10 @@ pub struct Config {
 pub struct LogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
+
+    #[knus(child, unwrap(argument))]
+    pub level: LogsLevel,
+
     #[knus(child, default)]
     pub file: FileLogsConfig,
 }
@@ -47,15 +51,26 @@ impl Default for LogsConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            file: Default::default(),
+            ..Default::default()
         }
     }
+}
+
+#[derive(DecodeScalar, Default)]
+pub enum LogsLevel {
+    Error,
+    Warn,
+    #[default]
+    Info,
+    Debug,
+    Trace,
 }
 
 #[derive(Decode)]
 pub struct FileLogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
+
     #[knus(property, default="logs".into())]
     pub path: String,
 }
