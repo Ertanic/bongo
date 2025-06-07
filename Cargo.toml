@@ -11,6 +11,7 @@ tokio = { version = "1.45", features = ["full"] }
 anyhow = "1.0"
 knus = "3.3"
 miette = { version = "7.6", features = ["fancy"] }
+axum = "0.8"
 
 [build-dependencies]
 copy-glob = "0.1"
