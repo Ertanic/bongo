@@ -33,6 +33,9 @@ pub async fn load_config(path: &Path) -> anyhow::Result<Config> {
 pub struct Config {
     #[knus(child, default)]
     pub logs: LogsConfig,
+
+    #[knus(child, default)]
+    pub app: AppConfig,
 }
 
 #[derive(Decode)]
@@ -82,4 +85,10 @@ impl Default for FileLogsConfig {
             path: String::from("logs"),
         }
     }
+}
+
+#[derive(Decode, Default)]
+pub struct AppConfig {
+    #[knus(child, unwrap(argument), default = 80)]
+    pub port: u16,
 }

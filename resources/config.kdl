@@ -2,3 +2,7 @@ logs enabled=true {
     level "trace"
     file enabled=true path="logs"
 }
+
+app {
+    port 8080
+}
