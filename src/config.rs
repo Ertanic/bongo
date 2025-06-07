@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{Context, bail};
 use knus::Decode;
 use std::path::Path;
 use tokio::fs;
@@ -14,13 +14,19 @@ pub async fn load_config(path: &Path) -> anyhow::Result<Config> {
         .await
         .with_context(|| format!("Unable to load config file: {}", config_path.display()))?;
 
-    knus::parse(
+    match knus::parse(
         config_path
             .to_str()
             .expect("Unable to convert a path to a string"),
         &content,
-    )
-    .context("Failed to parse the config file")
+    ) {
+        Ok(config) => Ok(config),
+        Err(err) => {
+            let error = miette::Report::new(err);
+            eprintln!("{error:?}");
+            bail!("Failed to parse the config file: {}", config_path.display())
+        }
+    }
 }
 
 #[derive(Decode, Default)]
