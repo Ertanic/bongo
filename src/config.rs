@@ -1,3 +1,5 @@
+use anyhow::Context;
+use knus::Decode;
 use std::path::Path;
 use tokio::fs;
 
@@ -12,10 +14,13 @@ pub async fn load_config(path: &Path) -> anyhow::Result<Config> {
         .await
         .with_context(|| format!("Unable to load config file: {}", config_path.display()))?;
 
+    knus::parse(
         config_path
             .to_str()
             .expect("Unable to convert a path to a string"),
         &content,
+    )
+    .context("Failed to parse the config file")
 }
 
 #[derive(Decode, Default)]
