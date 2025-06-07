@@ -10,6 +10,7 @@ tracing-appender = "0.2"
 tokio = { version = "1.45", features = ["full"] }
 anyhow = "1.0"
 knus = "3.3"
+miette = { version = "7.6", features = ["fancy"] }
 
 [build-dependencies]
 copy-glob = "0.1"
