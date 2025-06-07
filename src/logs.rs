@@ -34,7 +34,7 @@ pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard
         let logs_folder = exe_folder.join(&config.file.path);
 
         if fs::metadata(&logs_folder).await.is_err() {
-            fs::create_dir(&logs_folder).await.with_context(|| {
+            fs::create_dir_all(&logs_folder).await.with_context(|| {
                 format!(
                     "It is not possible to create a logs folder in the path: {}",
                     logs_folder.display()
