@@ -1,4 +1,4 @@
-use crate::config::LogsConfig;
+use crate::config::{LogsConfig, LogsLevel};
 use anyhow::Context;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
@@ -10,7 +10,13 @@ pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard
         return Ok(None);
     }
 
-    let env_filter = tracing_subscriber::EnvFilter::new("trace");
+    let env_filter = tracing_subscriber::EnvFilter::new(match config.level {
+        LogsLevel::Error => "error",
+        LogsLevel::Warn => "warn",
+        LogsLevel::Info => "info",
+        LogsLevel::Debug => "debug",
+        LogsLevel::Trace => "trace",
+    });
 
     let console_layer = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stdout)

@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{Context, bail};
 use knus::Decode;
 use std::path::Path;
 use tokio::fs;
@@ -14,24 +14,28 @@ pub async fn load_config(path: &Path) -> anyhow::Result<Config> {
         .await
         .with_context(|| format!("Unable to load config file: {}", config_path.display()))?;
 
-    knus::parse(
+    match knus::parse(
         config_path
             .to_str()
             .expect("Unable to convert a path to a string"),
         &content,
-    )
-    .context("Failed to parse the config file")
+    ) {
+        Ok(config) => Ok(config),
+        Err(err) => {
+            let error = miette::Report::new(err);
+            eprintln!("{error:?}");
+            bail!("Failed to parse the config file: {}", config_path.display())
+        }
+    }
 }
 
 #[derive(Decode, Default)]
 pub struct Config {
     #[knus(child, default)]
     pub logs: LogsConfig,
-
-    #[knus(child, default)]
-    pub app: AppConfig,
 }
 
+#[derive(Decode)]
 pub struct LogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
@@ -43,8 +47,26 @@ pub struct LogsConfig {
     pub file: FileLogsConfig,
 }
 
+impl Default for LogsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            file: Default::default(),
+        }
+    }
 }
 
+#[derive(DecodeScalar, Default)]
+pub enum LogsLevel {
+    Error,
+    Warn,
+    #[default]
+    Info,
+    Debug,
+    Trace,
+}
+
+#[derive(Decode)]
 pub struct FileLogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
@@ -53,17 +75,11 @@ pub struct FileLogsConfig {
     pub path: String,
 }
 
+impl Default for FileLogsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            path: String::from("logs"),
         }
-}
-
-#[derive(Decode)]
-pub struct FileRouteConfig {
-    #[knus(argument)]
-    pub path: String,
-
-    #[knus(argument)]
-    pub file: String,
-
-    #[knus(children)]
-    pub nest_routes: Vec<RouteConfig>,
+    }
 }
