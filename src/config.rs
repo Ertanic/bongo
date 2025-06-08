@@ -1,5 +1,5 @@
 use anyhow::{Context, bail};
-use knus::Decode;
+use knus::{Decode, DecodeScalar};
 use std::path::Path;
 use tokio::fs;
 
@@ -38,7 +38,7 @@ pub struct Config {
     pub app: AppConfig,
 }
 
-#[derive(Decode)]
+#[derive(Decode, Default)]
 pub struct LogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
@@ -54,7 +54,7 @@ impl Default for LogsConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            file: Default::default(),
+            ..Default::default()
         }
     }
 }
@@ -69,7 +69,7 @@ pub enum LogsLevel {
     Trace,
 }
 
-#[derive(Decode)]
+#[derive(Decode, Default)]
 pub struct FileLogsConfig {
     #[knus(property, default = true)]
     pub enabled: bool,
@@ -78,17 +78,30 @@ pub struct FileLogsConfig {
     pub path: String,
 }
 
-impl Default for FileLogsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            path: String::from("logs"),
-        }
-    }
-}
-
 #[derive(Decode, Default)]
 pub struct AppConfig {
     #[knus(child, unwrap(argument), default = 80)]
     pub port: u16,
+
+    #[knus(child, unwrap(children))]
+    pub routes: Vec<RouteConfig>,
+}
+
+#[derive(Decode)]
+pub enum RouteConfig {
+    File(FileRouteConfig),
+    Dir(#[knus(argument)] String, #[knus(argument)] String),
+    FallbackFile(#[knus(argument)] String),
+}
+
+#[derive(Decode)]
+pub struct FileRouteConfig {
+    #[knus(argument)]
+    pub path: String,
+
+    #[knus(argument)]
+    pub file: String,
+
+    #[knus(children)]
+    pub nest_routes: Vec<RouteConfig>,
 }
