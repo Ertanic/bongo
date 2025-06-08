@@ -1,12 +1,15 @@
 use crate::config::load_config;
 use crate::logs::init_logs;
+use crate::routes::register_routes;
 use anyhow::Context;
 use axum::Router;
 use std::net::Ipv4Addr;
-use tracing::Level;
+use tower_http::trace::TraceLayer;
 
 mod config;
 mod logs;
+mod routes;
+mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -17,10 +20,9 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Application is starting...");
 
-    let span = tracing::span!(Level::INFO, "app");
-    let _enter = span.enter();
-
-    let app = Router::new();
+    let app = register_routes(Router::new(), config.app.routes)
+        .context("Unable to register routes")?
+        .layer(TraceLayer::new_for_http());
 
     tracing::info!("Routes have been registered");
 
