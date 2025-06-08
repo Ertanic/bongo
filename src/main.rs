@@ -1,12 +1,15 @@
 use crate::config::load_config;
 use crate::logs::init_logs;
+use crate::modules::load_modules;
+use crate::routes::register_routes;
 use anyhow::Context;
 use axum::Router;
 use std::net::Ipv4Addr;
-use tracing::Level;
+use tower_http::trace::TraceLayer;
 
 mod config;
 mod logs;
+mod modules;
 mod routes;
 mod utils;
 
@@ -18,6 +21,10 @@ async fn main() -> anyhow::Result<()> {
         .context("Failed to init logs system")?;
 
     tracing::info!("Application is starting...");
+
+    let _ctx = load_modules().await.context("Failed to load modules")?;
+
+    tracing::info!("Modules has been loaded");
 
     let app = register_routes(Router::new(), config.app.routes)
         .context("Unable to register routes")?
