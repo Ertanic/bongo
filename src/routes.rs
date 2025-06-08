@@ -1,6 +1,6 @@
-use anyhow::Context;
 use crate::config::{FileRouteConfig, RouteConfig};
 use crate::utils::get_current_folder;
+use anyhow::Context;
 use axum::Router;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::instrument;
@@ -14,6 +14,7 @@ pub fn register_routes(mut app: Router, routes: Vec<RouteConfig>) -> anyhow::Res
             RouteConfig::File(FileRouteConfig {
                 path,
                 file,
+                #[allow(unused)]
                 nest_routes,
             }) => {
                 let file = base.join(file);

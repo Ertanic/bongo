@@ -13,6 +13,8 @@ knus = "3.3"
 miette = { version = "7.6", features = ["fancy"] }
 axum = "0.8"
 tower-http = { version = "0.6", features = ["full"] }
+rune = { version = "0.14" }
+futures = "0.3"
 
 [build-dependencies]
 copy-glob = "0.1"

@@ -22,7 +22,7 @@ pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard
         .with_writer(std::io::stdout)
         .with_ansi(true)
         .with_level(true)
-        .with_target(true);
+        .with_target(false);
 
     let register = tracing_subscriber::registry().with(console_layer);
 
@@ -60,7 +60,7 @@ pub async fn init_logs(config: &LogsConfig) -> anyhow::Result<Option<WorkerGuard
             .with_writer(non_blocking)
             .with_ansi(false)
             .with_level(true)
-            .with_target(true);
+            .with_target(false);
 
         register.with(file_layer).with(env_filter).init();
 
