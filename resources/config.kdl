@@ -1,8 +1,14 @@
 logs enabled=true {
     level "trace"
-    file enabled=true path="logs"
+    file enabled=false path="logs"
 }
 
 app {
     port 8080
+
+    routes {
+        file "/" "pages/index.html"
+        dir "/public" "public"
+        fallback-file "pages/404.html"
+    }
 }
