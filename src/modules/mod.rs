@@ -92,8 +92,16 @@ fn get_module() -> rune::support::Result<Module> {
     let mut module = Module::new();
     module.ty::<AppContext>()?;
 
+    module.function_meta(error_impl)?;
+    module.macro_meta(error_macro)?;
+    module.function_meta(warn_impl)?;
+    module.macro_meta(warn_macro)?;
+    module.function_meta(info_impl)?;
+    module.macro_meta(info_macro)?;
     module.function_meta(debug_impl)?;
     module.macro_meta(debug_macro)?;
+    module.function_meta(trace_impl)?;
+    module.macro_meta(trace_macro)?;
 
     Ok(module)
 }
