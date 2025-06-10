@@ -19,11 +19,11 @@ async fn main() -> anyhow::Result<()> {
     let _guard = init_logs(&config.logs)
         .await
         .context("Failed to init logs system")?;
-    
+
     tracing::info!("Application is starting...");
-    
+
     let _ctx = load_modules().await.context("Failed to load modules")?;
-    
+
     tracing::info!("Modules has been loaded");
 
     let app = register_routes(Router::new(), config.app.routes)
