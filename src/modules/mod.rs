@@ -2,26 +2,19 @@ mod macros;
 mod utils;
 
 use self::macros::*;
-use crate::modules::utils::get_default_ctx;
-use crate::utils::get_current_folder;
+use crate::{modules::utils::get_default_ctx, utils::get_current_folder};
 use anyhow::Context;
-use axum::Router;
 use futures::future::join_all;
+use rune::alloc::prelude::TryClone;
+use rune::runtime::Function;
 use rune::{
-    Any, Diagnostics, Module, Source, Sources, Vm, compile,
-    macros::{FormatArgs, MacroContext, TokenStream, quote},
-    parse::Parser,
-    runtime::VmResult,
+    Any, Diagnostics, Module, Source, Sources, Vm, function,
+    runtime::SyncFunction,
     termcolor::{ColorChoice, StandardStream},
 };
-use std::{ops::Deref, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, ops::Deref, path::PathBuf, sync::Arc};
 use tokio::{sync::Mutex, task::spawn_blocking};
 use tracing::instrument;
-
-#[derive(Any, Debug)]
-pub struct AppContext {
-    pub routes: Arc<Mutex<Vec<Router>>>,
-}
 
 #[instrument(skip_all)]
 pub async fn load_modules() -> anyhow::Result<Arc<AppContext>> {
@@ -29,9 +22,7 @@ pub async fn load_modules() -> anyhow::Result<Arc<AppContext>> {
         .context("Unable to get current app folder")?
         .join("modules");
 
-    let ctx = Arc::new(AppContext {
-        routes: Arc::new(Mutex::new(Vec::new())),
-    });
+    let ctx = Arc::new(AppContext::default());
 
     let modules = std::fs::read_dir(&base)
         .with_context(|| format!("Unable to read folder of modules: {}", base.display()))?
@@ -91,6 +82,9 @@ fn load_module(app_context: Arc<AppContext>, path: PathBuf) -> rune::support::Re
 fn get_module() -> rune::support::Result<Module> {
     let mut module = Module::new();
     module.ty::<AppContext>()?;
+    module.ty::<RoutesContext>()?;
+
+    module.function_meta(RoutesContext::add_route)?;
 
     module.function_meta(error_impl)?;
     module.macro_meta(error_macro)?;
@@ -106,5 +100,29 @@ fn get_module() -> rune::support::Result<Module> {
     Ok(module)
 }
 
-#[derive(Any)]
-pub struct Route(Router);
+#[derive(Any, Default)]
+pub struct AppContext {
+    #[rune(get)]
+    pub routes: RoutesContext,
+}
+
+#[derive(Any, TryClone, Default)]
+pub struct RoutesContext(pub Arc<Mutex<HashMap<String, SyncFunction>>>);
+
+impl RoutesContext {
+    #[function]
+    fn add_route(&self, path: String, func: Function) {
+        let func = func
+            .into_sync()
+            .expect("Unable to convert function to sync");
+
+        if !path.starts_with("/") {
+            panic!("the path must begin with a slash");
+        }
+
+        let mut lock = self.0.blocking_lock();
+        lock.insert(path.clone(), func);
+        
+        tracing::debug!("Path {path} has been added");
+    }
+}
