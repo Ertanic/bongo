@@ -2,6 +2,7 @@ use crate::config::load_config;
 use crate::logs::init_logs;
 use crate::modules::load_modules;
 use crate::routes::register_routes;
+use crate::services::RoutesService;
 use anyhow::Context;
 use axum::Router;
 use std::net::Ipv4Addr;
@@ -11,6 +12,7 @@ mod config;
 mod logs;
 mod modules;
 mod routes;
+mod services;
 mod utils;
 
 #[tokio::main]
@@ -28,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = register_routes(Router::new(), config.app.routes)
         .context("Unable to register routes")?
+        .fallback_service(RoutesService::new(_ctx.routes.0.clone()))
         .layer(TraceLayer::new_for_http());
 
     tracing::info!("Routes have been registered");
