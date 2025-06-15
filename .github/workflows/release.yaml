@@ -1,41 +1,55 @@
 name: Release
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - main
+
 jobs:
   release:
-    permissions:
-      contents: write
-      pull-requests: read
     outputs:
-      release-id: ${{ steps.release-drafter.outputs.id }}
-      version: ${{ steps.release-drafter.outputs.resolved_version }}
+      release-id: ${{ steps.release.outputs.id }}
+      version: ${{ steps.changelog.outputs.version }}
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@v6
-        id: release-drafter
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ github.token }}
+          output-file: "false"
+          skip-git-pull: "true"
+          skip-commit: 'true'
+
+      - name: Create release
+        id: release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          token: ${{ github.token }}
+          draft: true
+          name: Release v${{ steps.changelog.outputs.version }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          tag: ${{ steps.changelog.outputs.tag }}
 
   build:
-    permissions:
-      contents: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
     needs: release
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v1
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: true
 
