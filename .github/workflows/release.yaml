@@ -8,19 +8,17 @@ jobs:
   release:
     permissions:
       contents: write
-      pull-requests: read
+      pull-requests: write
     outputs:
-      release-id: ${{ steps.release-drafter.outputs.id }}
-      version: ${{ steps.release-drafter.outputs.resolved_version }}
+      release-tag: ${{ steps.release-please.outputs.tag_name }}
+      version: ${{ steps.release-please.outputs.version }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: googleapis/release-please-action@v4
+        id: release-please
         with:
-          fetch-depth: 0
-      - uses: release-drafter/release-drafter@v6
-        id: release-drafter
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          release-type: 'rust'
+          target-branch: ${{ github.ref_name }}
 
   build:
     permissions:
@@ -51,5 +49,5 @@ jobs:
         uses: AButler/upload-release-assets@v3.0
         with:
           files: "target/release/bongo?(.exe)"
-          release-id: ${{ needs.release.outputs.release-id }}
+          release-tag: ${{ needs.release.outputs.release-tag }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
