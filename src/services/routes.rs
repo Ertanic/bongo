@@ -1,3 +1,4 @@
+use crate::modules::types::WebResult;
 use axum::{
     body::Body,
     http::StatusCode,
@@ -48,16 +49,19 @@ impl tower::Service<Request<Body>> for RoutesService {
                 }
             };
 
-            handler
-                .async_send_call::<()>(())
+            let result = handler
+                .async_send_call::<WebResult>(())
                 .await
                 .into_result()
                 .expect("Unable to convert VmResult into Result");
 
-            Ok(Response::builder()
-                .status(StatusCode::OK)
-                .body(Body::from(()))
-                .unwrap())
+            let builder = Response::builder().status(StatusCode::OK);
+            let response = match result {
+                WebResult::Body(content) => builder.body(Body::from(content)).unwrap(),
+                WebResult::None => builder.body(Body::from(())).unwrap(),
+            };
+
+            Ok(response)
         })
     }
 }

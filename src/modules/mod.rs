@@ -1,5 +1,6 @@
 mod macros;
 mod utils;
+pub mod types;
 
 use self::macros::*;
 use crate::{modules::utils::get_default_ctx, utils::get_current_folder};
@@ -81,6 +82,8 @@ fn load_module(app_context: Arc<AppContext>, path: PathBuf) -> rune::support::Re
 
 fn get_module() -> rune::support::Result<Module> {
     let mut module = Module::new();
+    module.ty::<types::WebResult>()?;
+
     module.ty::<AppContext>()?;
     module.ty::<RoutesContext>()?;
 
