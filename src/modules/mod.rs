@@ -116,13 +116,16 @@ impl RoutesContext {
             .into_sync()
             .expect("Unable to convert function to sync");
 
-        if !path.starts_with("/") {
-            panic!("the path must begin with a slash");
-        }
+        let path = if !path.starts_with("/") {
+            tracing::warn!("the path must begin with a slash");
+            format!("/{}", path)
+        } else {
+            path
+        };
 
         let mut lock = self.0.blocking_lock();
         lock.insert(path.clone(), func);
-        
+
         tracing::debug!("Path {path} has been added");
     }
 }
