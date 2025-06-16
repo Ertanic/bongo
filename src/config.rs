@@ -50,15 +50,6 @@ pub struct LogsConfig {
     pub file: FileLogsConfig,
 }
 
-impl Default for LogsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            ..Default::default()
-        }
-    }
-}
-
 #[derive(DecodeScalar, Default)]
 pub enum LogsLevel {
     Error,
